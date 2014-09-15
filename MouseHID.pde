@@ -246,6 +246,7 @@ void loop() {
 		None
  
  *******************************************************************/
+
 void USBCheckHIDRequest(void)
 {
   if(SetupPkt.Recipient != USB_SETUP_RECIPIENT_INTERFACE_BITFIELD) return;
@@ -275,8 +276,16 @@ void USBCheckHIDRequest(void)
         Serial1.println((int) SetupPkt.wIndex, HEX);
         if(usb.GetDeviceState() >= CONFIGURED_STATE)
         {
+          usb.EP0SendROMPtr((uint8_t*)ReportDescriptorMouse,sizeof(ReportDescriptorMouse),USB_EP0_INCLUDE_ZERO);
+          switch(SetupPkt.wIndex) // figure out which interface the requested report descriptor
+          {
+            case 0: // interface 0
+              break;
+            case 1: // interface 1
+              //usb.EP0SendROMPtr((uint8_t*)&ReportDescriptorKeyboard,sizeof(ReportDescriptorKeyboard),USB_EP0_INCLUDE_ZERO);
+              break;
+          }
           //See usbcfg.h
-          usb.EP0SendROMPtr((uint8_t*)&hid_rpt01,sizeof(hid_rpt01),USB_EP0_INCLUDE_ZERO);
         }
         break;
       case DSC_PHY:  //Physical Descriptor
@@ -403,7 +412,7 @@ static boolean MY_USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, 
     case EVENT_EP0_REQUEST:
       Serial1.println("EVENT_EP0_REQUEST");
       // this is the handler to deal with EP 0 request
-      // this is where our HID device talks to the USB Host controller
+      // this is where our HID device talks to the USB Host controller   
       USBCheckHIDRequest();
       break;
     case EVENT_BUS_ERROR:
@@ -429,9 +438,9 @@ static boolean MY_USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, 
 
 void Reboot()
 {
-  Serial1.println("Close serial terminal, resetting board in...");
+  Serial1.println("Resetting board...");
   unsigned char sec;
-  for( sec = 5; sec >= 1; sec-- ) {
+  for( sec = 1; sec >= 1; sec-- ) {
     Serial1.print(sec,DEC);
     Serial1.println(" seconds...");
     delay(1000);

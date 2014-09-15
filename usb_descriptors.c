@@ -180,56 +180,6 @@ ROM USB_DEVICE_DESCRIPTOR device_dsc=
     0x00,                   // Device serial number string index
     0x01                    // Number of possible configurations
 };
-#ifdef GONE
-/* Configuration 1 Descriptor */
-ROM BYTE configDescriptor1[]={
-    /* Configuration Descriptor */
-    0x09,//sizeof(USB_CFG_DSC),    // Size of this descriptor in bytes
-    USB_DESCRIPTOR_CONFIGURATION,                // CONFIGURATION descriptor type
-    0x29,0x00,            // Total length of data for this cfg
-    1,                      // Number of interfaces in this cfg
-    1,                      // Index value of this configuration
-    0,                      // Configuration string index
-    _DEFAULT | _SELF,               // Attributes, see usb_device.h
-    50,                     // Max power consumption (2X mA)
-							
-    /* Interface Descriptor */
-    0x09,//sizeof(USB_INTF_DSC),   // Size of this descriptor in bytes
-    USB_DESCRIPTOR_INTERFACE,               // INTERFACE descriptor type
-    0,                      // Interface Number
-    0,                      // Alternate Setting Number
-    2,                      // Number of endpoints in this intf
-    HID_INTF,               // Class code
-    0,     // Subclass code
-    0,     // Protocol code
-    0,                      // Interface string index
-
-    /* HID Class-Specific Descriptor */
-    0x09,//sizeof(USB_HID_DSC)+3,    // Size of this descriptor in bytes
-    DSC_HID,                // HID descriptor type
-    0x11,0x01,                 // HID Spec Release Number in BCD format (1.11)
-    0x00,                   // Country Code (0x00 for Not supported)
-    HID_NUM_OF_DSC,         // Number of class descriptors, see usbcfg.h
-    DSC_RPT,                // Report descriptor type
-    HID_RPT01_SIZE,0x00,//sizeof(hid_rpt01),      // Size of the report descriptor
-    
-    /* Endpoint Descriptor */
-    0x07,/*sizeof(USB_EP_DSC)*/
-    USB_DESCRIPTOR_ENDPOINT,    //Endpoint Descriptor
-    HID_EP | _EP_IN,                   //EndpointAddress
-    _INTERRUPT,                       //Attributes
-    0x40,0x00,                  //size
-    0x01,                        //Interval
-
-    /* Endpoint Descriptor */
-    0x07,/*sizeof(USB_EP_DSC)*/
-    USB_DESCRIPTOR_ENDPOINT,    //Endpoint Descriptor
-    HID_EP | _EP_OUT,                   //EndpointAddress
-    _INTERRUPT,                       //Attributes
-    0x40,0x00,                  //size
-    0x01                        //Interval
-};
-#endif
 
 #define HID_Mouse_EP  1
 #define HID_Key_EP    2
@@ -263,8 +213,9 @@ ROM BYTE configDescriptor1[]={
 #define EP_TYPE_INT					0x03
 
 // HID Mouse
-//ROM struct{BYTE report[MOUSE_RPT01_SIZE];} ReportDescriptorMouse = {
-ROM struct{BYTE report[MOUSE_RPT01_SIZE];} hid_rpt01 = {
+// uint8_t
+const uint8_t ReportDescriptorMouse[MOUSE_RPT01_SIZE] = {
+//ROM struct{BYTE report[HID_RPT01_SIZE];} hid_rpt01 = {
   0x05, 0x01,                    //  USAGE_PAGE (Generic Desktop)
   0x09, 0x02,                    //  USAGE (Mouse)
   0xa1, 0x01,                    //  COLLECTION (Application)
@@ -363,7 +314,7 @@ ROM BYTE configDescriptor1[]={
 	0x00,                           // bCourntyCode
 	0x01,                           // bNumDescriptors
 	DSC_RPT,                        // bDescriptorType
-	sizeof(hid_rpt01) & 0xff,	sizeof(hid_rpt01)>>8 & 0xff, //bDescriptorLength
+	sizeof(ReportDescriptorMouse) & 0xff,	sizeof(ReportDescriptorMouse)>>8 & 0xff, //bDescriptorLength
 	//sizeof(ReportDescriptorMouse),	sizeof(ReportDescriptorMouse)>>8, //bDescriptorLength
 
 	////////////////////////////////////
