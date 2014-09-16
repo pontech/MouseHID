@@ -114,16 +114,44 @@ void loop() {
     {
       Reset();
     }
-    if (strcmp(serial_command, "reboot") == 0)
+    else if (strcmp(serial_command, "reboot") == 0)
     {
       Reboot();
+    }
+    else if (strcmp(serial_command, "movex") == 0)
+    {
+      rgDevice2Host[0] = 0; // Mouse buttons
+      rgDevice2Host[1] = 10; // x
+      rgDevice2Host[2] = 0; // y
+      rgDevice2Host[3] = 0; // wheel
+      rgDevice2Host[4] = 0x3A; // Not sure what this is for
+      
+      // make sure the HOST has read everything we have sent it, and we can put new stuff in the buffer
+      if(!usb.HandleBusy(hDevice2Host))
+      {
+        hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 3); //USB_EP_SIZE);	// write out our data
+      }
+    }
+    else if (strcmp(serial_command, "movey") == 0)
+    {
+      rgDevice2Host[0] = 0; // Mouse buttons
+      rgDevice2Host[1] = 0; // x
+      rgDevice2Host[2] = 10; // y
+      rgDevice2Host[3] = 0; // wheel
+      rgDevice2Host[4] = 0x3A; // Not sure what this is for
+      
+      // make sure the HOST has read everything we have sent it, and we can put new stuff in the buffer
+      if(!usb.HandleBusy(hDevice2Host))
+      {
+        hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 3); //USB_EP_SIZE);	// write out our data
+      }
     }
     else //none of the ifs above were true
     {
       Serial.println("Command not recognized");
     }
   }
-
+#ifdef GONE
   // we are armed and waiting for something to come from the Host on EP 1
   // when the handle is no longer busy, that means some data came in.      
   if(!usb.HandleBusy(hHost2Device))
@@ -167,6 +195,7 @@ void loop() {
     // arm for the next read, it will busy until we get another command on EP 1
     hHost2Device = usb.GenRead(HID_EP, rgHost2Device, USB_EP_SIZE);  
   }   
+#endif
 
   // blink if we never hit the toggle button on the PC
   if(fBlink && cBlink-- == 0)
@@ -249,8 +278,16 @@ void loop() {
 
 void USBCheckHIDRequest(void)
 {
-  if(SetupPkt.Recipient != USB_SETUP_RECIPIENT_INTERFACE_BITFIELD) return;
-  if(SetupPkt.bIntfID != HID_INTF_ID) return;
+  if(SetupPkt.Recipient != USB_SETUP_RECIPIENT_INTERFACE_BITFIELD)
+  {
+    Serial1.println("SetupPkt.Recipient != USB_SETUP_RECIPIENT_INTERFACE_BITFIELD");
+    return;
+  }
+  if(SetupPkt.bIntfID != HID_INTF_ID)
+  {
+    Serial1.println("SetupPkt.bIntfID != HID_INTF_ID");
+    return;
+  }
     
     /*
      * There are two standard requests that hid.c may support.
@@ -276,10 +313,10 @@ void USBCheckHIDRequest(void)
         Serial1.println((int) SetupPkt.wIndex, HEX);
         if(usb.GetDeviceState() >= CONFIGURED_STATE)
         {
-          usb.EP0SendROMPtr((uint8_t*)ReportDescriptorMouse,sizeof(ReportDescriptorMouse),USB_EP0_INCLUDE_ZERO);
           switch(SetupPkt.wIndex) // figure out which interface the requested report descriptor
           {
             case 0: // interface 0
+              usb.EP0SendROMPtr((uint8_t*)ReportDescriptorMouse,sizeof(ReportDescriptorMouse),USB_EP0_INCLUDE_ZERO);
               break;
             case 1: // interface 1
               //usb.EP0SendROMPtr((uint8_t*)&ReportDescriptorKeyboard,sizeof(ReportDescriptorKeyboard),USB_EP0_INCLUDE_ZERO);
@@ -472,6 +509,7 @@ unsigned char receive_function(char* buff,unsigned char sizevar)
   if (Serial1.available() > 0) //if there are characters stored in the serial input buffer
   {
     ch = Serial1.read(); //read one character from buffer
+    if (ch == '\n') return 0; // don't put new lines into the buffer
     if( ctr < sizevar) { // if the counter has not exceeded size of your buffer yet
       buff[ctr++] = ch; //add it to your buffer
     }
@@ -479,11 +517,10 @@ unsigned char receive_function(char* buff,unsigned char sizevar)
     {
       buff[ctr-1] = 0; //replace the carriage return with 0 the string termination
       ctr = 0; //reset the pointer
-      Serial1.print("Command: "); //print a string and stay on the same line
-      if(buff[0] != 0)
-        Serial1.println(buff); //print out the string received followed by a new line
-      else
-        Serial1.print("\n");
+      Serial1.print("Command["); //print a string and stay on the same line
+      Serial1.print(strlen(buff),DEC);
+      Serial1.print("]: "); //print a string and stay on the same line
+      Serial1.println(buff); //print out the string received followed by a new line
       return 1;
     }
     else
