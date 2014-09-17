@@ -200,7 +200,7 @@ void loop() {
     // make sure the HOST has read everything we have sent it, and we can put new stuff in the buffer
     if(!usb.HandleBusy(hDevice2Host))
     {
-      hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 3); //USB_EP_SIZE);	// write out our data
+      hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 4); //USB_EP_SIZE);	// write out our data
     }
     ButtonsDownUpdated = false;
   }
@@ -438,7 +438,7 @@ void USBCheckHIDRequest(void)
         if(usb.GetDeviceState() >= CONFIGURED_STATE)
         {
           //18 is a magic number.  It is the offset from start of the configuration descriptor to the start of the HID descriptor.
-          usb.EP0SendROMPtr((uint8_t*)&configDescriptor1 + 18,sizeof(USB_HID_DSC)+3,USB_EP0_INCLUDE_ZERO);
+          usb.EP0SendROMPtr((uint8_t*)&configDescriptor1 + 18,sizeof(USB_HID_DSC)+4,USB_EP0_INCLUDE_ZERO);
         }
         break;
       case DSC_RPT:  //Report Descriptor
