@@ -1,5 +1,6 @@
 // 20140316
 #include <chipKITUSBDevice.h>
+#include "DetectEdge.h"
 
 
 // include HID for HID declarations; not part of the standard USB Device library include
@@ -64,8 +65,8 @@ static boolean MY_USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, 
 USB_HANDLE hHost2Device = 0;		// Handle to the HOST OUT buffer
 byte rgHost2Device[USB_EP_SIZE];	// the OUT buffer which is always relative to the HOST, so this is really an in buffer to us
 
-USB_HANDLE hDevice2Host = 0;		// Handle to the HOST OUT buffer
-uint8_t rgDevice2Host[USB_EP_SIZE];	// the OUT buffer which is always relative to the HOST, so this is really an in buffer to us
+USB_HANDLE hDevice2Host = 0;		// Handle to the HOST IN buffer
+uint8_t rgDevice2Host[USB_EP_SIZE];	// the IN buffer which is always relative to the HOST, so this is really an out buffer to us
 
 // some bookkeeping variables for the host.
 uint8_t idle_rate;
@@ -75,6 +76,21 @@ uint8_t active_protocol;   // [0] Boot Protocol [1] Report Protocol
 USBDevice usb(MY_USER_USB_CALLBACK_EVENT_HANDLER);	// specify the callback routine
 // USBDevice usb(NULL);		// use default callback routine
 // USBDevice usb;		// use default callback routine
+
+#define LButtonPin C0IO0
+#define MButtonPin C0IO1
+#define RButtonPin C0IO2
+#define LUpButtonPin C0IO3
+#define MUpButtonPin C1IO0
+#define RUpButtonPin C1IO1
+DetectEdge LButtonEdge(LButtonPin,true,10);
+DetectEdge MButtonEdge(MButtonPin,true,10);
+DetectEdge RButtonEdge(RButtonPin,true,10);
+DetectEdge LUpButtonEdge(LUpButtonPin,true,10);
+DetectEdge MUpButtonEdge(MUpButtonPin,true,10);
+DetectEdge RUpButtonEdge(RUpButtonPin,true,10);
+unsigned char ButtonsDown = 0;
+bool ButtonsDownUpdated = false;
 
 void setup() 
 {
@@ -96,9 +112,98 @@ void setup()
 
   // set the LED as an output parameter
   pinMode(LED, OUTPUT);
+  pinMode(LButtonPin,INPUT);
+  pinMode(MButtonPin,INPUT);
+  pinMode(RButtonPin,INPUT);
+  pinMode(LUpButtonPin,INPUT);
+  pinMode(MUpButtonPin,INPUT);
+  pinMode(RUpButtonPin,INPUT);
 }
 
 void loop() {
+  ButtonsDown = 0;
+  LButtonEdge.scan();
+  MButtonEdge.scan();
+  RButtonEdge.scan();
+  LUpButtonEdge.scan();
+  MUpButtonEdge.scan();
+  RUpButtonEdge.scan();
+  
+  if(LButtonEdge.rising())
+  {
+    ButtonsDown |= 0x01;
+    ButtonsDownUpdated = true;
+  }
+  if(LButtonEdge.falling())
+  {
+    ButtonsDown &= ~0x01;
+    ButtonsDownUpdated = true;
+  }
+  if(MButtonEdge.rising())
+  {
+    ButtonsDown |= 0x04;
+    ButtonsDownUpdated = true;
+  }
+  if(MButtonEdge.falling())
+  {
+    ButtonsDown &= ~0x04;
+    ButtonsDownUpdated = true;
+  }
+  if(RButtonEdge.rising())
+  {
+    ButtonsDown |= 0x02;
+    ButtonsDownUpdated = true;
+  }
+  if(RButtonEdge.falling())
+  {
+    ButtonsDown &= ~0x02;
+    ButtonsDownUpdated = true;
+  }
+  if(LUpButtonEdge.rising())
+  {
+    ButtonsDown |= 0x08;
+    ButtonsDownUpdated = true;
+  }
+  if(LUpButtonEdge.falling())
+  {
+    ButtonsDown &= ~0x08;
+    ButtonsDownUpdated = true;
+  }
+  if(MUpButtonEdge.rising())
+  {
+    ButtonsDown |= 0x20;
+    ButtonsDownUpdated = true;
+  }
+  if(MUpButtonEdge.falling())
+  {
+    ButtonsDown &= ~0x20;
+    ButtonsDownUpdated = true;
+  }
+  if(RUpButtonEdge.rising())
+  {
+    ButtonsDown |= 0x10;
+    ButtonsDownUpdated = true;
+  }
+  if(RUpButtonEdge.falling())
+  {
+    ButtonsDown &= ~0x10;
+    ButtonsDownUpdated = true;
+  }
+  if(ButtonsDownUpdated)
+  {
+    rgDevice2Host[0] = ButtonsDown; //((unsigned char)1)<<serial_command[6]; // Mouse buttons
+    rgDevice2Host[1] = 0; // x
+    rgDevice2Host[2] = 0; // y
+    rgDevice2Host[3] = 0; // wheel
+    rgDevice2Host[4] = 0x3A; // Not sure what this is for
+    
+    // make sure the HOST has read everything we have sent it, and we can put new stuff in the buffer
+    if(!usb.HandleBusy(hDevice2Host))
+    {
+      hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 3); //USB_EP_SIZE);	// write out our data
+    }
+    ButtonsDownUpdated = false;
+  }
   static int ledValue = LOW;
 
   static int ledBlink = LOW;
@@ -147,9 +252,37 @@ void loop() {
         hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 3); //USB_EP_SIZE);	// write out our data
       }
     }
+    else if (strcmp(serial_command, "buttonup") == 0)
+    {
+      rgDevice2Host[0] = 0x01; //((unsigned char)1)<<serial_command[6]; // Mouse buttons
+      rgDevice2Host[1] = 1; // x
+      rgDevice2Host[2] = 1; // y
+      rgDevice2Host[3] = 0; // wheel
+      rgDevice2Host[4] = 0x3A; // Not sure what this is for
+      
+      // make sure the HOST has read everything we have sent it, and we can put new stuff in the buffer
+      if(!usb.HandleBusy(hDevice2Host))
+      {
+        hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 3); //USB_EP_SIZE);	// write out our data
+      }
+    }
+    else if (strcmp(serial_command, "buttondn") == 0)
+    {
+      rgDevice2Host[0] = (unsigned char)0x00; //((unsigned char)1)<<serial_command[6]; // Mouse buttons
+      rgDevice2Host[1] = 1; // x
+      rgDevice2Host[2] = 1; // y
+      rgDevice2Host[3] = 0; // wheel
+      rgDevice2Host[4] = 0x3A; // Not sure what this is for
+      
+      // make sure the HOST has read everything we have sent it, and we can put new stuff in the buffer
+      if(!usb.HandleBusy(hDevice2Host))
+      {
+        hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 3); //USB_EP_SIZE);	// write out our data
+      }
+    }
     else //none of the ifs above were true
     {
-      Serial.println("Command not recognized");
+      Serial1.println("Command not recognized");
     }
   }
 #ifdef GONE
