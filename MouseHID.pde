@@ -83,6 +83,13 @@ USBDevice usb(MY_USER_USB_CALLBACK_EVENT_HANDLER);	// specify the callback routi
 #define LUpButtonPin C0IO3
 #define MUpButtonPin C1IO0
 #define RUpButtonPin C1IO1
+#define WheelUpPin C1IO2
+#define WheelDnPin C1IO3
+#define XposPin C2IO0
+#define XnegPin C2IO1
+#define YposPin C2IO2
+#define YnegPin C2IO3
+
 DetectEdge LButtonEdge(LButtonPin,true,10);
 DetectEdge MButtonEdge(MButtonPin,true,10);
 DetectEdge RButtonEdge(RButtonPin,true,10);
@@ -118,6 +125,12 @@ void setup()
   pinMode(LUpButtonPin,INPUT);
   pinMode(MUpButtonPin,INPUT);
   pinMode(RUpButtonPin,INPUT);
+  pinMode(WheelUpPin,INPUT);
+  pinMode(WheelDnPin,INPUT);
+  pinMode(XposPin,INPUT);
+  pinMode(XnegPin,INPUT);
+  pinMode(YposPin,INPUT);
+  pinMode(YnegPin,INPUT);
 }
 
 void loop() {
@@ -189,12 +202,24 @@ void loop() {
     ButtonsDown &= ~0x10;
     ButtonsDownUpdated = true;
   }
+  if(digitalRead(WheelUpPin)==LOW)
+  {
+    rgDevice2Host[3] = 1; // wheel
+    ButtonsDownUpdated = true;
+    Serial1.println("Wheel Up");
+  }
+  if(digitalRead(WheelDnPin)==LOW)
+  {
+    rgDevice2Host[3] = -1; // wheel
+    ButtonsDownUpdated = true;
+    Serial1.println("Wheel Down");
+  }
   if(ButtonsDownUpdated)
   {
     rgDevice2Host[0] = ButtonsDown; //((unsigned char)1)<<serial_command[6]; // Mouse buttons
     rgDevice2Host[1] = 0; // x
     rgDevice2Host[2] = 0; // y
-    rgDevice2Host[3] = 0; // wheel
+    //rgDevice2Host[3] = 0; // wheel
     rgDevice2Host[4] = 0x3A; // Not sure what this is for
     
     // make sure the HOST has read everything we have sent it, and we can put new stuff in the buffer
@@ -202,6 +227,7 @@ void loop() {
     {
       hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 4); //USB_EP_SIZE);	// write out our data
     }
+    rgDevice2Host[3] = 0; // wheel
     ButtonsDownUpdated = false;
   }
   static int ledValue = LOW;
@@ -438,7 +464,7 @@ void USBCheckHIDRequest(void)
         if(usb.GetDeviceState() >= CONFIGURED_STATE)
         {
           //18 is a magic number.  It is the offset from start of the configuration descriptor to the start of the HID descriptor.
-          usb.EP0SendROMPtr((uint8_t*)&configDescriptor1 + 18,sizeof(USB_HID_DSC)+4,USB_EP0_INCLUDE_ZERO);
+          usb.EP0SendROMPtr((uint8_t*)&configDescriptor1 + 18,sizeof(USB_HID_DSC)+3,USB_EP0_INCLUDE_ZERO);
         }
         break;
       case DSC_RPT:  //Report Descriptor

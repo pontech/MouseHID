@@ -325,7 +325,7 @@ ROM BYTE configDescriptor1[]={
 	USB_DESCRIPTOR_ENDPOINT,        // bDescriptorType		- descriptor type
 	EP_IN | HID_Mouse_EP,           // bEndpointAddress		- endpoint characteristics (IN endpoint)
 	_INTERRUPT,                     // bmAttributes			- endpoint attributes  (interrupt)
-	0x3, 0x00,                      // wMaxPacketSize		- max packet size (HID 3 byte report)
+	0x4, 0x00,                      // wMaxPacketSize		- max packet size (HID 3 byte report)
 	0x0A,                           // bInterval			- polling interval in 1 msec increments (10)
 
 #ifdef GONE
