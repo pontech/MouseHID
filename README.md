@@ -1,6 +1,6 @@
 MouseHID
 ========
-Mouse exampel code based on Digilent DemoHID example.
+Mouse example code based on Digilent DemoHID example.  Requires Digilent chipKIT USB Libraries
 
 Contributors
 ============
