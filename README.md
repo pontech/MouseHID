@@ -10,7 +10,7 @@ If you contribute to this library, please make sure the code you are contributin
 License
 =======
 
-Copyright (c) 2011, ProLinear/PONTECH, Inc.
+Copyright (c) 2014, ProLinear/PONTECH, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
