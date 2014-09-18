@@ -206,19 +206,37 @@ void loop() {
   {
     rgDevice2Host[3] = 1; // wheel
     ButtonsDownUpdated = true;
-    Serial1.println("Wheel Up");
   }
   if(digitalRead(WheelDnPin)==LOW)
   {
     rgDevice2Host[3] = -1; // wheel
     ButtonsDownUpdated = true;
-    Serial1.println("Wheel Down");
   }
+  if(digitalRead(XposPin)==LOW)
+  {
+    rgDevice2Host[1] = 4; // wheel
+    ButtonsDownUpdated = true;
+  }
+  if(digitalRead(XnegPin)==LOW)
+  {
+    rgDevice2Host[1] = -4; // wheel
+    ButtonsDownUpdated = true;
+  }
+  if(digitalRead(YposPin)==LOW)
+  {
+    rgDevice2Host[2] = 4; // wheel
+    ButtonsDownUpdated = true;
+  }
+  if(digitalRead(YnegPin)==LOW)
+  {
+    rgDevice2Host[2] = -4; // wheel
+    ButtonsDownUpdated = true;
+ }
   if(ButtonsDownUpdated)
   {
     rgDevice2Host[0] = ButtonsDown; //((unsigned char)1)<<serial_command[6]; // Mouse buttons
-    rgDevice2Host[1] = 0; // x
-    rgDevice2Host[2] = 0; // y
+    //rgDevice2Host[1] = 0; // x
+    //rgDevice2Host[2] = 0; // y
     //rgDevice2Host[3] = 0; // wheel
     rgDevice2Host[4] = 0x3A; // Not sure what this is for
     
@@ -227,6 +245,8 @@ void loop() {
     {
       hDevice2Host = usb.GenWrite(HID_EP, rgDevice2Host, 4); //USB_EP_SIZE);	// write out our data
     }
+    rgDevice2Host[1] = 0; // x
+    rgDevice2Host[2] = 0; // y
     rgDevice2Host[3] = 0; // wheel
     ButtonsDownUpdated = false;
   }
