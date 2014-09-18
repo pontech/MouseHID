@@ -1,4 +1,4 @@
-// 20140316
+// 20140316 //the version of mpide this code was developed and tested in.
 #include <chipKITUSBDevice.h>
 #include "DetectEdge.h"
 
@@ -30,12 +30,9 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#define LButtonPin C0IO0
-#define MButtonPin C0IO1
+#define LButtonPin C0IO0 //This example was developed on a Quick240
+#define MButtonPin C0IO1 //we used its pin names
 #define RButtonPin C0IO2
-#define LUpButtonPin C0IO3
-#define MUpButtonPin C1IO0
-#define RUpButtonPin C1IO1
 #define WheelUpPin C1IO2
 #define WheelDnPin C1IO3
 #define XposPin C2IO0
@@ -46,9 +43,6 @@
 DetectEdge LButtonEdge(LButtonPin,true,10);
 DetectEdge MButtonEdge(MButtonPin,true,10);
 DetectEdge RButtonEdge(RButtonPin,true,10);
-DetectEdge LUpButtonEdge(LUpButtonPin,true,10);
-DetectEdge MUpButtonEdge(MUpButtonPin,true,10);
-DetectEdge RUpButtonEdge(RUpButtonPin,true,10);
 unsigned char ButtonsDown = 0;
 bool ButtonsDownUpdated = false;
 
@@ -70,9 +64,6 @@ void setup()
   pinMode(LButtonPin,INPUT);
   pinMode(MButtonPin,INPUT);
   pinMode(RButtonPin,INPUT);
-  pinMode(LUpButtonPin,INPUT);
-  pinMode(MUpButtonPin,INPUT);
-  pinMode(RUpButtonPin,INPUT);
   pinMode(WheelUpPin,INPUT);
   pinMode(WheelDnPin,INPUT);
   pinMode(XposPin,INPUT);
@@ -85,9 +76,6 @@ void loop() {
   LButtonEdge.scan();
   MButtonEdge.scan();
   RButtonEdge.scan();
-  LUpButtonEdge.scan();
-  MUpButtonEdge.scan();
-  RUpButtonEdge.scan();
   
   if(LButtonEdge.rising())
   {
@@ -119,36 +107,6 @@ void loop() {
     ButtonsDown &= ~0x02;
     ButtonsDownUpdated = true;
   }
-  if(LUpButtonEdge.rising())
-  {
-    ButtonsDown |= 0x08;
-    ButtonsDownUpdated = true;
-  }
-  if(LUpButtonEdge.falling())
-  {
-    ButtonsDown &= ~0x08;
-    ButtonsDownUpdated = true;
-  }
-  if(MUpButtonEdge.rising())
-  {
-    ButtonsDown |= 0x20;
-    ButtonsDownUpdated = true;
-  }
-  if(MUpButtonEdge.falling())
-  {
-    ButtonsDown &= ~0x20;
-    ButtonsDownUpdated = true;
-  }
-  if(RUpButtonEdge.rising())
-  {
-    ButtonsDown |= 0x10;
-    ButtonsDownUpdated = true;
-  }
-  if(RUpButtonEdge.falling())
-  {
-    ButtonsDown &= ~0x10;
-    ButtonsDownUpdated = true;
-  }
   if(digitalRead(WheelUpPin)==LOW)
   {
     rgDevice2Host[3] = 1; // wheel
@@ -178,7 +136,7 @@ void loop() {
   {
     rgDevice2Host[2] = -4; // y
     ButtonsDownUpdated = true;
- }
+  }
   if(ButtonsDownUpdated)
   {
     rgDevice2Host[0] = ButtonsDown; // Mouse buttons

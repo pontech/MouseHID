@@ -1,14 +1,14 @@
 /********************************************************************
  FileName:     	usb_descriptors.c
  Dependencies:	See INCLUDES section
- Processor:		PIC18 or PIC24 USB Microcontrollers
+ Processor:		PIC18 or PIC24 or PIC32 USB Microcontrollers
  Hardware:		The code is natively intended to be used on the following
  				hardware platforms: PICDEM(R) FS USB Demo Board, 
  				PIC18F87J50 FS USB Plug-In Module, or
  				Explorer 16 + PIC24 USB PIM.  The firmware may be
  				modified for use on other USB platforms by editing the
  				HardwareProfile.h file.
- Complier:  	Microchip C18 (for PIC18) or C30 (for PIC24)
+ Complier:  	Microchip C18 (for PIC18) or C30 (for PIC24) or 
  Company:		Microchip Technology, Inc.
 
  Software License Agreement:
@@ -157,11 +157,6 @@ state according to the definition in the USB specification.
 #include "./USB/usb.h"
 #include "./USB/usb_function_hid.h"
 
-/** CONSTANTS ******************************************************/
-#if defined(__18CXX)
-#pragma romdata
-#endif
-
 /* Device Descriptor */
 ROM USB_DEVICE_DESCRIPTOR device_dsc=
 {
@@ -182,8 +177,6 @@ ROM USB_DEVICE_DESCRIPTOR device_dsc=
 };
 
 #define HID_Mouse_EP  1
-#define HID_Key_EP    2
-#define MSD_EP        3
 
 /* HID Interface Class Code */
 #define CLASS_HID					0x03
@@ -195,7 +188,6 @@ ROM USB_DEVICE_DESCRIPTOR device_dsc=
 
 /* HID Interface Class Protocol Codes */
 #define HID_PROTOCOL_NONE           0x00
-#define HID_PROTOCOL_KEYBOARD       0x01
 #define HID_PROTOCOL_MOUSE          0x02
 
 /* MSD Class SubClass Codes */
@@ -245,42 +237,6 @@ const uint8_t ReportDescriptorMouse[MOUSE_RPT01_SIZE] = {
   0xc0                           //  END_COLLECTION
 };
 
-// HID Keyboard
-ROM BYTE ReportDescriptorKeyboard[] = {
-    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-    0x09, 0x06,                    // USAGE (Keyboard)
-    0xa1, 0x01,                    // COLLECTION (Application)
-    0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
-    0x19, 0xe0,                    //   USAGE_MINIMUM (Keyboard LeftControl)
-    0x29, 0xe7,                    //   USAGE_MAXIMUM (Keyboard Right GUI)
-    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-    0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
-    0x75, 0x01,                    //   REPORT_SIZE (1)
-    0x95, 0x08,                    //   REPORT_COUNT (8)
-    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
-    0x95, 0x01,                    //   REPORT_COUNT (1)
-    0x75, 0x08,                    //   REPORT_SIZE (8)
-    0x81, 0x03,                    //   INPUT (Cnst,Var,Abs)
-    0x95, 0x05,                    //   REPORT_COUNT (5)
-    0x75, 0x01,                    //   REPORT_SIZE (1)
-    0x05, 0x08,                    //   USAGE_PAGE (LEDs)
-    0x19, 0x01,                    //   USAGE_MINIMUM (Num Lock)
-    0x29, 0x05,                    //   USAGE_MAXIMUM (Kana)
-    0x91, 0x02,                    //   OUTPUT (Data,Var,Abs)
-    0x95, 0x01,                    //   REPORT_COUNT (1)
-    0x75, 0x03,                    //   REPORT_SIZE (3)
-    0x91, 0x03,                    //   OUTPUT (Cnst,Var,Abs)
-    0x95, 0x06,                    //   REPORT_COUNT (6)
-    0x75, 0x08,                    //   REPORT_SIZE (8)
-    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-    0x25, 0x65,                    //   LOGICAL_MAXIMUM (101)
-    0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
-    0x19, 0x00,                    //   USAGE_MINIMUM (Reserved (no event indicated))
-    0x29, 0x65,                    //   USAGE_MAXIMUM (Keyboard Application)
-    0x81, 0x00,                    //   INPUT (Data,Ary,Abs)
-    0xc0                           // END_COLLECTION
-};
-
 //CONFIG DESCRIPTOR ORDER CORRESPONDS TO HID 1.0 OR LATER
 /* Configuration 1 Descriptor */
 ROM BYTE configDescriptor1[]={
@@ -328,88 +284,9 @@ ROM BYTE configDescriptor1[]={
 	0x4, 0x00,                      // wMaxPacketSize		- max packet size (HID 3 byte report)
 	0x0A,                           // bInterval			- polling interval in 1 msec increments (10)
 
-#ifdef GONE
-	//////////////////////////////////////
-	// Interface Descriptor (Keyboard) //
-	////////////////////////////////////
-	0x09,							// bLength				- 9 bytes long
-	USB_DESCRIPTOR_INTERFACE, 		// bDescriptorType		- descriptor type
-	0x01, 							// bInterfaceNumber		- number of this interface (zero based)
-	0x00, 							// bAlternateSetting	- alternate setting (none)
-	0x02, 							// bNumEndpoints		- number of endpoints used by interface
-	CLASS_HID, 						// bInterfaceClass		- class code
-	HID_SUBCLASS_BOOT_INTF,			// bInterfaceSubClass	- subclass code
-	HID_PROTOCOL_KEYBOARD, 			// bInterfaceProtocol	- protocol (mouse)
-	0x03, 							// iInterface			- index to string that describes interface
-
-	/////////////////////////////////////
- 	// HID descriptor described above //
-	///////////////////////////////////
-	0x09, 							// bLength
-	DSC_HID, 						// bDescriptorType
-	0x11, 0x01,						// bcdHID release (2 bytes)
-	0x00, 							// bCourntyCode
-	0x01, 							// bNumDescriptors
-	DSC_RPT, 						// bDescriptorType
-  	sizeof(ReportDescriptorKeyboard),	sizeof(ReportDescriptorKeyboard)>>8, //bDescriptorLength
-
-	////////////////////////////////////
-	// Interrupt Endpoint descriptor //
-	//////////////////////////////////
-	0x07,							// bLength				- 7 bytes long
-	USB_DESCRIPTOR_ENDPOINT, 		// bDescriptorType		- descriptor type
-	EP_IN | HID_Key_EP, 			// bEndpointAddress		- endpoint characteristics (IN endpoint)
-	0x03, 							// bmAttributes			- endpoint attributes  (interrupt)
-	0x08, 0x00, 					// wMaxPacketSize		- max packet size (HID 8 byte report)
-	0x10, 							// bInterval			- polling interval in 1 msec increments (10)
-
-	////////////////////////////////////
-	// Interrupt Endpoint descriptor //
-	//////////////////////////////////
-	0x07,							// bLength				- 7 bytes long
-	USB_DESCRIPTOR_ENDPOINT, 		// bDescriptorType		- descriptor type
-	EP_OUT | HID_Key_EP, 			// bEndpointAddress		- endpoint characteristics (IN endpoint)
-	0x03, 							// bmAttributes			- endpoint attributes  (interrupt)
-	0x01, 0x00, 					// wMaxPacketSize		- max packet size (HID 1 byte report)
-	0x10, 							// bInterval			- polling interval in 1 msec increments (10)
-
-	////////////////////////////
-	// Interface Descriptor  //
-	//////////////////////////
-	0x09,							// bLength				- 9 bytes long
-	USB_DESCRIPTOR_INTERFACE, 		// bDescriptorType		- descriptor type
-	0x02, 							// bInterfaceNumber		- number of this interface (zero based)
-	0x00, 							// bAlternateSetting	- alternate setting (none)
-	0x02, 							// bNumEndpoints		- number of endpoints used by interface
-	CLASS_MSD, 						// bInterfaceClass		- class code
-	MSD_SUBCLASS_SCSI,				// bInterfaceSubClass	- subclass code
-	MSD_PROTOCOL_BULK_ONLY, 		// bInterfaceProtocol	- protocol (mouse)
-	0x05, 							// iInterface			- index to string that describes interface
-
-	///////////////////////////////
-	// Bulk Endpoint descriptor //
-	/////////////////////////////
-	0x07,							// bLength				- 7 bytes long
-	USB_DESCRIPTOR_ENDPOINT, 		// bDescriptorType		- descriptor type
-	EP_IN | MSD_EP, 				// bEndpointAddress		- endpoint characteristics (IN endpoint)
-	EP_TYPE_BULK, 					// bmAttributes			- endpoint attributes  (interrupt)
-	0x08, 0x00, 					// wMaxPacketSize		- max packet size
-	0x00, 							// bInterval			- Does not apply to bulk endpoints
-
-	///////////////////////////////
-	// Bulk Endpoint descriptor //
-	/////////////////////////////
-	0x07,							// bLength				- 7 bytes long
-	USB_DESCRIPTOR_ENDPOINT, 		// bDescriptorType		- descriptor type
-	EP_OUT | MSD_EP, 				// bEndpointAddress		- endpoint characteristics (IN endpoint)
-	EP_TYPE_BULK, 					// bmAttributes			- endpoint attributes  (interrupt)
-	0x40, 0x00, 					// wMaxPacketSize		- max packet size
-	0x00, 							// bInterval			- Does not apply to bulk endpoints
-#endif
 };
 
 char  *HID_MouseDescriptor    = configDescriptor1 + 18; //18 is a magic number.  It is the offset from start of the configuration descriptor to the start of the HID descriptor.
-char  *HID_KeyboardDescriptor = configDescriptor1 + 43;
 
 //Language code string descriptor
 ROM struct{BYTE bLength;BYTE bDscType;WORD string[1];}sd000={
@@ -429,27 +306,6 @@ sizeof(sd002),USB_DESCRIPTOR_STRING,
 {'S','i','m','p','l','e',' ','H','I','D',' ',
 'D','e','v','i','c','e',' ','D','e','m','o'
 }};
-
-#ifdef GONE
-//Class specific descriptor - HID 
-ROM struct{BYTE report[HID_RPT01_SIZE];}hid_rpt01={
-{
-    0x06, 0x00, 0xFF,       // Usage Page = 0xFF00 (Vendor Defined Page 1)
-    0x09, 0x01,             // Usage (Vendor Usage 1)
-    0xA1, 0x01,             // Collection (Application)
-    0x19, 0x01,             //      Usage Minimum 
-    0x29, 0x40,             //      Usage Maximum 	//64 input usages total (0x01 to 0x40)
-    0x15, 0x01,             //      Logical Minimum (data bytes in the report may have minimum value = 0x00)
-    0x25, 0x40,      	  	//      Logical Maximum (data bytes in the report may have maximum value = 0x00FF = unsigned 255)
-    0x75, 0x08,             //      Report Size: 8-bit field size
-    0x95, 0x40,             //      Report Count: Make sixty-four 8-bit fields (the next time the parser hits an "Input", "Output", or "Feature" item)
-    0x81, 0x00,             //      Input (Data, Array, Abs): Instantiates input packet fields based on the above report size, count, logical min/max, and usage.
-    0x19, 0x01,             //      Usage Minimum 
-    0x29, 0x40,             //      Usage Maximum 	//64 output usages total (0x01 to 0x40)
-    0x91, 0x00,             //      Output (Data, Array, Abs): Instantiates output packet fields.  Uses same report size and count as "Input" fields, since nothing new/different was specified to the parser since the "Input" item.
-    0xC0}                   // End Collection
-};                  
-#endif
 
 //Array of configuration descriptors
 ROM BYTE *ROM USB_CD_Ptr[]=

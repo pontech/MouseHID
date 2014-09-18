@@ -133,9 +133,6 @@ void USBCheckHIDRequest(void)
             case 0: // interface 0
               usb.EP0SendROMPtr((uint8_t*)ReportDescriptorMouse,sizeof(ReportDescriptorMouse),USB_EP0_INCLUDE_ZERO);
               break;
-            case 1: // interface 1
-              //usb.EP0SendROMPtr((uint8_t*)&ReportDescriptorKeyboard,sizeof(ReportDescriptorKeyboard),USB_EP0_INCLUDE_ZERO);
-              break;
           }
           //See usbcfg.h
         }
